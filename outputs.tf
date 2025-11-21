@@ -39,3 +39,10 @@ output "tidb_status_cmd" {
   description = "Run this to view TiDB cluster pods"
   value       =   module.tidb_app.tidb_status_cmd
 }
+
+output "pulled_image_ids" {
+  description = "IDs of all successfully pulled application images."
+  value = {
+    for key, image in docker_image.private_apps : key => image.image_id
+  }
+}

@@ -10,8 +10,8 @@ resource "kubernetes_namespace" "tidb_cluster" {
   metadata {
     name = "tidb-cluster"
   }
-}
 
+}
 # ------------------------------------------
 # 1. Fetch TiDB Operator CRDs (Multi-Document YAML)
 # Uses data.http to fetch content at runtime.
@@ -82,6 +82,7 @@ resource "kubectl_manifest" "tidb_cluster" {
   yaml_body         = var.tidb_cluster_yaml # Use the passed-in file content (tidb-cluster.yaml)
   server_side_apply = true
   wait              = true
+  force_conflicts   = true
 
   depends_on = [
     kubernetes_namespace.tidb_cluster,

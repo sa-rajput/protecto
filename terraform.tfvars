@@ -50,3 +50,27 @@ pd_disk_gb        = 100
 tikv_count        = 1
 tikv_machine_type = "e2-standard-4"
 tikv_disk_gb      = 250
+
+# The username (Robot Account) for dell-harbor.protecto.ai
+robot_username = "robot$gcp-marketplace"
+
+# The password/token for the robot account
+robot_password = "qgXVHbBfTk5qBCrHnKxVePUeW6bKhBDD"
+
+# The registry address (used for reference, usually doesn't need changing)
+private_registry_address = "dell-harbor.protecto.ai"
+
+
+
+application_images = {
+  # Key = internal Terraform identifier; Value = Full Registry Path
+  "async_request_batch_job"            = "dell-harbor.protecto.ai/gcp-marketplace/async_request_batch_job:v8.0.0-prod",
+  "privacy_vault_backend_service"      = "dell-harbor.protecto.ai/gcp-marketplace/privacy_vault_backend_service:v8.0.0-prod",
+  "privacy_vault_token_pre_gen_job"    = "dell-harbor.protecto.ai/gcp-marketplace/privacy_vault_token_pre_gen_job:v8.0.0-prod",
+#  "ml-service-large"                   = "dell-harbor.protecto.ai/gcp-marketplace/ml-service-large:v8.0.0-prod",
+  "rabbitmq"                           = "dell-harbor.protecto.ai/gcp-marketplace/rabbitmq:3.8.22-management-alpine",
+}
+
+artifact_registry_host = "asia-south1-docker.pkg.dev"
+artifact_registry_repo = "gcp-marketplace-mirror"
+ar_region              = "asia-south1" # <-- NEW VALUE

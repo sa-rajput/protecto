@@ -49,33 +49,8 @@ module "gke_cluster" {
   depends_on = [module.network]
 }
 
-# -----------------------------------------------------
-# Data sources for Kubernetes Authentication
-# -----------------------------------------------------
 
-data "google_client_config" "default" {}
 
-# Provider configurations (now defined in the root as they depend on module outputs)
-provider "kubernetes" {
-  host                   = "https://${data.google_container_cluster.primary.endpoint}"
-  token                  = data.google_client_config.default.access_token
-  cluster_ca_certificate = base64decode(data.google_container_cluster.primary.master_auth[0].cluster_ca_certificate)
-}
-
-provider "kubectl" {
-  host                   = "https://${data.google_container_cluster.primary.endpoint}"
-  token                  = data.google_client_config.default.access_token
-  cluster_ca_certificate = base64decode(data.google_container_cluster.primary.master_auth[0].cluster_ca_certificate)
-  load_config_file       = false
-}
-
-provider "helm" {
-  kubernetes = {
-    host                   = "https://${data.google_container_cluster.primary.endpoint}"
-    token                  = data.google_client_config.default.access_token
-    cluster_ca_certificate = base64decode(data.google_container_cluster.primary.master_auth[0].cluster_ca_certificate)
-  }
-}
 
 data "google_container_cluster" "primary" {
   name     = module.gke_cluster.gke_name
@@ -86,9 +61,6 @@ data "google_container_cluster" "primary" {
     module.gke_cluster
   ]
 }
-
-
-
 # -----------------------------------------------------
 # Module 3: TiDB Application Deployment
 # -----------------------------------------------------
@@ -96,11 +68,73 @@ data "google_container_cluster" "primary" {
 module "tidb_app" {
   source            = "./modules/tidb-app"
   tidb_cluster_yaml = file("./tidb-yamls/tidb-cluster.yaml") # Using file() instead of var.tidb_yaml_path/tidb-cluster.yaml
-  
+ 
   # Explicitly pass the provider configuration to the module
   providers = {
     kubectl    = kubectl
     kubernetes = kubernetes
     helm       = helm
   }
+  depends_on = [
+    # Ensures the GKE cluster creation finishes before anything in this module starts
+    module.gke_cluster 
+  ]
+}# Create Artifact Registry Repository (Must happen first)
+resource "google_artifact_registry_repository" "destination_repo" {
+  repository_id = var.artifact_registry_repo
+  location      = var.ar_region  
+  format        = "DOCKER"
+  description   = "Docker image repository for mirroring dell-harbor.protecto.ai assets."
+  project       = var.project_id
+}
+
+# -----------------------------------------------------
+# Pull Images from Harbor (Source: dell-harbor.protecto.ai)
+# -----------------------------------------------------
+resource "docker_image" "private_apps" {
+  for_each = var.application_images
+  name = each.value # The Harbor address
+  
+  keep_locally = false
+  pull_triggers = [
+    timestamp()
+  ]
+}
+
+# -----------------------------------------------------
+# Tag Images for Artifact Registry (Rename)
+# -----------------------------------------------------
+resource "docker_tag" "registry_tags" {
+  for_each = var.application_images
+  
+  # Source Image ID comes from the pull operation
+  source_image = docker_image.private_apps[each.key].image_id
+  
+  # Target Image is the full AR path (Host/Project/Repo/Name:Tag)
+  target_image = "${var.artifact_registry_host}/${var.project_id}/${var.artifact_registry_repo}/${each.key}:${split(":", each.value)[1]}"
+  
+  # Implicit dependency on docker_image.private_apps ensures pull completes before tagging starts
+  depends_on = [docker_image.private_apps] 
+}
+
+# -----------------------------------------------------
+# Push Images to Artifact Registry (Destination)
+# -----------------------------------------------------
+resource "docker_image" "artifact_pushes" {
+  for_each = var.application_images
+  
+  # Name is the newly tagged AR path
+  name = docker_tag.registry_tags[each.key].target_image
+
+  # keep_locally = false triggers the implicit push
+  keep_locally = false
+  
+  triggers = {
+    digest = docker_image.private_apps[each.key].image_id
+  }
+  
+  # CRITICAL DEPENDENCY: Ensure repository is created before attempting to push
+  depends_on = [
+    google_artifact_registry_repository.destination_repo 
+  ]
 }

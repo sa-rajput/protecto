@@ -104,3 +104,46 @@ variable "tikv_disk_gb" {
   type        = number
 }
 
+## 🐳 Docker Private Registry Authentication
+
+variable "robot_username" {
+  description = "The username (robot account) for the private Docker registry (dell-harbor.protecto.ai)."
+  type        = string
+  sensitive   = true 
+}
+
+variable "robot_password" {
+  description = "The password/token for the robot account used to log into the private Docker registry."
+  type        = string
+  sensitive   = true 
+}
+
+variable "private_registry_address" {
+  description = "The address of the private Docker registry (e.g., dell-harbor.protecto.ai)."
+  type        = string
+  # Setting a default value is safe here as it's not sensitive data
+  default     = "dell-harbor.protecto.ai" 
+}
+
+variable "application_images" {
+  description = "A map of image names to their fully qualified path in the private registry."
+  type        = map(string)
+   
+}
+
+
+
+variable "artifact_registry_host" {
+  description = "The hostname for the destination Artifact Registry (e.g., asia-south1-docker.pkg.dev)."
+  type        = string
+}
+
+variable "artifact_registry_repo" {
+  description = "The unique name of the Docker repository you created in Artifact Registry (e.g., 'gcp-marketplace-mirror')."
+  type        = string
+}
+
+variable "ar_region" {
+  description = "The GCP region for the Artifact Registry repository (e.g., asia-south1)."
+  type        = string
+}
