@@ -5,7 +5,7 @@
 # These resources create the secret containers in GCP and upload the data.
 
 resource "google_secret_manager_secret" "docker_username" {
-  secret_id = "docker-harbor-username"
+  secret_id = "username"
   project   = var.project_id
   # Use the automatic {} block to ensure replication is correctly configured
   replication {
@@ -19,7 +19,7 @@ resource "google_secret_manager_secret_version" "docker_username_version" {
 }
 
 resource "google_secret_manager_secret" "docker_password" {
-  secret_id = "docker-harbor-password"
+  secret_id = "password"
   project   = var.project_id
   replication {
     auto {}
