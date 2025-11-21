@@ -14,8 +14,8 @@ credentials = "" # e.g., "key.json"
 ## 2. Network Variables
 ## -----------------------------------------------------
 
-vpc_name              = "protecho-network-prod"
-subnet_name           = "protecho-subnet-prod"
+vpc_name              = "protecho-network"
+subnet_name           = "protecho-subnet"
 ip_cidr_range         = "10.0.0.0/16"  # GKE Nodes
 pods_cidr_range       = "10.20.0.0/20" # GKE Pods (Secondary Range 1)
 services_cidr_range   = "10.24.0.0/20" # GKE Services (Secondary Range 2)
@@ -24,7 +24,7 @@ services_cidr_range   = "10.24.0.0/20" # GKE Services (Secondary Range 2)
 ## 3. GKE Cluster Variables
 ## -----------------------------------------------------
 
-cluster_name = "protecho-gke-prod"
+cluster_name = "protecho-gke"
 
 ## -----------------------------------------------------
 ## 4. Node Pool Configuration (Based on original main.tf)
@@ -72,5 +72,5 @@ application_images = {
 }
 
 artifact_registry_host = "asia-south1-docker.pkg.dev"
-artifact_registry_repo = "gcp-marketplace-mirror"
+artifact_registry_repo = "gcp-repo"
 ar_region              = "asia-south1" # <-- NEW VALUE
