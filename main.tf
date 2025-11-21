@@ -93,48 +93,25 @@ resource "google_artifact_registry_repository" "destination_repo" {
 # -----------------------------------------------------
 resource "docker_image" "private_apps" {
   for_each = var.application_images
-  name = each.value # The Harbor address
-  
-  keep_locally = false
-  pull_triggers = [
-    timestamp()
-  ]
-}
+  name = each.value                       # e.g. "dell-harbor.protecto.ai/gcp-marketplace/privacy_vault_backend_service:v8.0.0-prod"
 
-# -----------------------------------------------------
-# Tag Images for Artifact Registry (Rename)
-# -----------------------------------------------------
-resource "docker_tag" "registry_tags" {
-  for_each = var.application_images
-  
-  # Source Image ID comes from the pull operation
-  source_image = docker_image.private_apps[each.key].image_id
-  
-  # Target Image is the full AR path (Host/Project/Repo/Name:Tag)
-  target_image = "${var.artifact_registry_host}/${var.project_id}/${var.artifact_registry_repo}/${each.key}:${split(":", each.value)[1]}"
-  
-  # Implicit dependency on docker_image.private_apps ensures pull completes before tagging starts
-  depends_on = [docker_image.private_apps] 
+  keep_locally = true                     # keep the image for the push
+  # remove timestamp() unless you want to pull every apply
+  # pull_triggers = [timestamp()]
 }
 
 # -----------------------------------------------------
 # Push Images to Artifact Registry (Destination)
 # -----------------------------------------------------
-resource "docker_image" "artifact_pushes" {
+resource "docker_registry_image" "to_gar" {
   for_each = var.application_images
-  
-  # Name is the newly tagged AR path
-  name = docker_tag.registry_tags[each.key].target_image
 
-  # keep_locally = false triggers the implicit push
-  keep_locally = false
-  
-  triggers = {
-    digest = docker_image.private_apps[each.key].image_id
-  }
-  
-  # CRITICAL DEPENDENCY: Ensure repository is created before attempting to push
+  name = "${var.artifact_registry_host}/${var.project_id}/${var.artifact_registry_repo}/${each.key}:${split(":", each.value)[1]}"
+
+  # trigger push when the pulled image updates
+  pull_triggers = [docker_image.private_apps[each.key].image_id]
+
   depends_on = [
-    google_artifact_registry_repository.destination_repo 
+    google_artifact_registry_repository.destination_repo
   ]
 }
