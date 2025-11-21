@@ -108,8 +108,7 @@ resource "docker_registry_image" "to_gar" {
 
   name = "${var.artifact_registry_host}/${var.project_id}/${var.artifact_registry_repo}/${each.key}:${split(":", each.value)[1]}"
 
-  # trigger push when the pulled image updates
-  pull_triggers = [docker_image.private_apps[each.key].image_id]
+ 
 
   depends_on = [
     google_artifact_registry_repository.destination_repo
