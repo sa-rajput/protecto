@@ -25,7 +25,7 @@ terraform {
     }
     docker = {
       source  = "kreuzwerker/docker"
-      version = "~> 3.0" # Use a compatible, recent version
+      version = "~> 3.6" # Use a compatible, recent version
     }
   }
 }
